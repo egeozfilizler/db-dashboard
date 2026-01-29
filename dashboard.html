@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kripto Dashboard</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #fff; padding: 20px; }
+        h1 { text-align: center; color: #f0b90b; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background-color: #2b2b2b; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #444; }
+        th { background-color: #363636; color: #f0b90b; }
+        tr:hover { background-color: #333; }
+        .positive { color: #0ecb81; font-weight: bold; } /* Yeşil */
+        .negative { color: #f6465d; font-weight: bold; } /* Kırmızı */
+        .loading { text-align: center; margin-top: 20px; color: #888; }
+    </style>
+</head>
+<body>
+
+    <h1>Canlı Piyasa Verileri</h1>
+    <div id="status" class="loading">Veriler bekleniyor...</div>
+
+    <table id="marketTable">
+        <thead>
+            <tr>
+                <th>Sembol</th>
+                <th>Fiyat</th>
+                <th>Değişim (24s)</th>
+                <th>Hacim</th>
+                <th>Son Güncelleme</th>
+            </tr>
+        </thead>
+        <tbody>
+            </tbody>
+    </table>
+
+    <script>
+        const API_URL = 'http://localhost:5151/api/data';
+        const tableBody = document.querySelector('#marketTable tbody');
+        const statusDiv = document.getElementById('status');
+
+        async function fetchData() {
+            try {
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error("API Hatası");
+                
+                const data = await response.json();
+                
+                // Veri geldiyse tabloyu güncelle
+                updateTable(data);
+                statusDiv.textContent = `Toplam ${data.length} parite güncellendi.`;
+            } catch (error) {
+                console.error(error);
+                statusDiv.textContent = "Sunucuya bağlanılamadı. Worker ve Server açık mı?";
+            }
+        }
+
+        function updateTable(data) {
+            // Tabloyu temizle ve yeniden oluştur (Performans için optimize edilebilir ama şimdilik yeterli)
+            tableBody.innerHTML = ''; 
+
+            // Veriyi sembol ismine göre sırala
+            data.sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+            data.forEach(coin => {
+                const row = document.createElement('tr');
+                
+                // Değişim rengini belirle
+                const changeClass = coin.change.startsWith('-') ? 'negative' : 'positive';
+
+                row.innerHTML = `
+                    <td>${coin.symbol}</td>
+                    <td>${coin.price.toFixed(4)}</td>
+                    <td class="${changeClass}">${coin.change}</td>
+                    <td>${coin.volume.toLocaleString()}</td>
+                    <td>${coin.timestamp}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // İlk açılışta veriyi çek
+        fetchData();
+
+        // Her 1 saniyede bir veriyi güncelle
+        setInterval(fetchData, 1000);
+    </script>
+</body>
+</html>
