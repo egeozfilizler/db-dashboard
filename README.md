@@ -162,14 +162,3 @@ LOCAL_SERVER = 'http://localhost:5151'
 
 **Sorun**: WebSocket verisi boş geliyor
 - **Çözüm**: `FOUND_KEYWORD` değişkenini keyword_finder.py ile doğru bulduğunuz kelimeye ayarlayın.
-
-## 📝 Lisans
-
-Bu proje kişisel kullanım için geliştirilmiştir.
-
-## 💡 İpuçları
-
-- Worker ve Server'ı aynı anda açık tutun
-- Browser'ı kapatmayın; otomatik tarayıcı oturumudur
-- Server'daki tablolarda fiyat değişimlerini gerçek zamanlı takip edin
-- Binance API yerine bu yöntem tercih edilirse daha düşük seviyeli veri akışına erişebilirsiniz

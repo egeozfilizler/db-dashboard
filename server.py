@@ -9,7 +9,7 @@ sio = socketio.AsyncServer(async_mode='aiohttp', cors_allowed_origins='*')
 app = web.Application()
 sio.attach(app)
 
-print("📡 SERVER: 5151 portunda dinlemeye başladı...")
+print("Server listening on port 5151")
 
 def calculate_change(open_price, close_price):
     try:
@@ -23,54 +23,43 @@ def calculate_change(open_price, close_price):
 
 @sio.event
 async def connect(sid, environ):
-    print(f"✅ WORKER BAĞLANDI (ID: {sid})")
+    print(f"Worker connected: {sid}")
 
 @sio.event
 async def disconnect(sid):
-    print("❌ Worker düştü.")
+    print(f"Worker disconnected: {sid}")
 
 @sio.event
 async def stream_data(sid, payload):
     try:
-        # ---------------------------------------------------------
-        # SENARYO 1: BINANCE VERİSİ GELDİYSE (Okunabilir yap)
-        # ---------------------------------------------------------
-        # Node.js kodunda data string ise kontrol ediliyordu
+        # Binance miniTicker verisi kontrolü
         data_content = payload.get('data')
         
         if isinstance(data_content, str) and "miniTicker" in data_content:
             parsed = json.loads(data_content)
             items = parsed.get('data', [])
 
-            # Veriyi haritalayalım (Mapping)
             readable_data = []
             for item in items:
                 readable_data.append({
-                    "Sembol": item.get('s'),           # s -> Symbol
-                    "Fiyat": float(item.get('c')),     # c -> Close Price
-                    "Hacim": f"{float(item.get('q')):.2f}", # q -> Quote Volume
+                    "Sembol": item.get('s'),
+                    "Fiyat": float(item.get('c')),
+                    "Hacim": f"{float(item.get('q')):.2f}",
                     "Degisim": calculate_change(item.get('o'), item.get('c'))
                 })
 
-            print(f"\n📊 [BINANCE VERİSİ İŞLENDİ] - {datetime.now().strftime('%H:%M:%S')}")
-            
-            # Terminalde tablo bas (İlk 5 veri)
+            print(f"\n[BINANCE] {datetime.now().strftime('%H:%M:%S')}")
             print(tabulate(readable_data[:10], headers="keys", tablefmt="pretty"))
-            
-            # TODO: Veritabanı kayıt işlemleri buraya eklenebilir.
 
-        # ---------------------------------------------------------
-        # SENARYO 2: DİĞER TİP VERİLER
-        # ---------------------------------------------------------
         else:
-            print("\n📦 [DİĞER VERİ PAKETİ]")
-            print(f"   ├─ Kaynak: {payload.get('sourceUrl')}")
+            print("\n[DATA]")
+            print(f"  Source: {payload.get('sourceUrl')}")
             
             content = json.dumps(data_content) if isinstance(data_content, (dict, list)) else str(data_content)
-            print(f"   └─ İçerik: {content[:200]}...")
+            print(f"  Content: {content[:200]}...")
 
     except Exception as e:
-        print(f"❌ Veri işleme hatası: {e}")
+        print(f"Error processing data: {e}")
 
 if __name__ == '__main__':
     web.run_app(app, port=5151)
