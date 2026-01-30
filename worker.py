@@ -4,10 +4,10 @@ import socketio
 import json
 import base64
 import time
+import sys
 
 # Config
-TARGET_URL = 'https://www.binance.com/tr/markets/overview'
-FOUND_KEYWORD = 'stream'
+TARGET_URL = 'https://example.com'  # Hedef URL'yi buraya girin
 LOCAL_SERVER = 'http://localhost:5151'
 
 # Socket.IO İstemci
@@ -27,22 +27,33 @@ async def main():
 
         print(f"Loading: {TARGET_URL}")
 
-        setup_socket_listener(page)
-
         try:
             await page.goto(TARGET_URL)
         except Exception:
             print("Warning during page load (can be ignored)")
 
         input('\nPress ENTER when data starts flowing...')
+        
+        # Get found_keyword from command line argument or prompt user
+        if len(sys.argv) > 1:
+            found_keyword = sys.argv[1]
+        else:
+            found_keyword = input("\nEnter the keyword to search for in WebSocket URLs: ").strip()
+            if not found_keyword:
+                found_keyword = 'stream'  # Default value
+                print(f"Using default keyword: '{found_keyword}'")
+        
+        print(f"Searching for WebSocket URLs containing: '{found_keyword}'")
+        
+        setup_socket_listener(page, found_keyword)
 
         print("\nListening for data...")
 
         await asyncio.Future()
 
-def setup_socket_listener(page):
+def setup_socket_listener(page, found_keyword):
     def handle_websocket(ws):
-        if FOUND_KEYWORD in ws.url:
+        if found_keyword in ws.url:
             print(f"[SOCKET] {ws.url}")
 
             def handle_frame(frame):
